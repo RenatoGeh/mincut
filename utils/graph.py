@@ -6,11 +6,13 @@ import graph_tool
 import graph_tool.generation
 import graph_tool.flow
 import graph_tool.draw
+import graph_tool.util
 import networkx as nx
 import networkx.algorithms
 import networkx.algorithms.community
 
 import spn
+import utils
 
 class VertexMap:
   # Assume scope is ordered, but if that is not the case, order must be set to True.
@@ -124,7 +126,7 @@ class PartitionGraph:
   #               if sample_func is None, then generate complete graph instead
   def __init__(self, D: spn.Dataset, S: spn.Scope, sample_func = None):
     self._G = None
-    self._S = S
+    self._S = np.array(S)
     self._M = VertexMap(S)
     if sample_func is None:
       self._G = _generate_complete_graph(D, S)
@@ -165,6 +167,29 @@ class PartitionGraph:
         else:
           P2.append(x)
     return P1, P2
+
+  def partition_mst(self):
+    W = self._G.edge_properties['weights']
+    nW = self._G.new_edge_property('double')
+    self._G.edge_properties['negative_weights'] = nW
+    nW.a = list(-W.get_array())
+    T = graph_tool.topology.min_spanning_tree(self._G, nW)
+    H = graph_tool.Graph(directed = False)
+    for i, v in enumerate(T):
+      if v == 1:
+        e = graph_tool.util.find_edge(self._G, self._G.edge_index, int(i))[0]
+        H.add_edge(e.source(), e.target())
+    I = np.nonzero(T.a)
+    K = np.squeeze(np.dstack((I, np.array(W.a)[I])))
+    # Sort by second column.
+    E = K[K[:,1].argsort()]
+    P = []
+    for i, p in enumerate(E):
+      e = graph_tool.util.find_edge(H, H.edge_index, int(i))[0]
+      H.remove_edge(e)
+      C, h = graph_tool.topology.label_components(H)
+      P.append([self._S[p] for p in utils.group_by(np.array(C.a))])
+    return P
 
 def _generate_complete_network(D: spn.Dataset, S: spn.Scope):
   G = nx.complete_graph(S)

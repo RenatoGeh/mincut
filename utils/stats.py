@@ -36,3 +36,10 @@ def split_by(D: spn.Dataset, I: list):
 def restrict(D: spn.Dataset, S: spn.Scope, P: spn.Scope):
   _, I, _ = np.intersect1d(S, P, assume_unique = True, return_indices = True)
   return D[:,I]
+
+# Groups elements indices by their values. If they have the same value, group them together. This
+# effectively returns a partition of where each element is in each set.
+def group_by(L):
+  I = np.argsort(L)
+  S = L[I]
+  return np.split(I, np.cumsum(np.diff(np.nonzero(np.concatenate(([True], S[1:] != S[:-1])))[0])))
