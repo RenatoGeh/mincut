@@ -5,7 +5,7 @@ from sklearn.cluster import KMeans
 import spn
 import utils
 
-def LearnKernighanLin(D: spn.Dataset, S: spn.Scope, k: int, dist: str = 'multinomial'):
+def LearnKL(D: spn.Dataset, S: spn.Scope, k: int, dist: str = 'multinomial'):
   if len(S) == 1:
     print('Creating univariate distribution...')
     if dist == 'multinomial':
@@ -20,7 +20,7 @@ def LearnKernighanLin(D: spn.Dataset, S: spn.Scope, k: int, dist: str = 'multino
     pi = spn.Product()
     for i in range(0, D.shape[1]):
       print(' ', i, D[:,i], [S[i]])
-      pi.add(Learn(D[:,i], [S[i]], k, dist))
+      pi.add(LearnKL(D[:,i], [S[i]], k, dist))
     return pi
   s = spn.Sum()
   C = utils.split_by(D, KMeans(n_clusters = k).fit(D).labels_)
@@ -38,8 +38,8 @@ def LearnKernighanLin(D: spn.Dataset, S: spn.Scope, k: int, dist: str = 'multino
     pi = spn.Product()
     s.add(pi, math.log(m))
     for p in P:
-      pi.add(Learn(utils.restrict(c, S, p[0]), p[0], k))
-      pi.add(Learn(utils.restrict(c, S, p[1]), p[1], k))
+      pi.add(LearnKL(utils.restrict(c, S, p[0]), p[0], k))
+      pi.add(LearnKL(utils.restrict(c, S, p[1]), p[1], k))
   return s
 
 def LearnMST(D: spn.Dataset, S: spn.Scope, k: int, dist: str = 'multinomial'):
@@ -57,7 +57,7 @@ def LearnMST(D: spn.Dataset, S: spn.Scope, k: int, dist: str = 'multinomial'):
     pi = spn.Product()
     for i in range(0, D.shape[1]):
       print(' ', i, D[:,i], [S[i]])
-      pi.add(Learn(D[:,i], [S[i]], k, dist))
+      pi.add(LearnMST(D[:,i], [S[i]], k, dist))
     return pi
   s = spn.Sum()
   C = utils.split_by(D, KMeans(n_clusters = k).fit(D).labels_)
@@ -81,7 +81,7 @@ def LearnMST(D: spn.Dataset, S: spn.Scope, k: int, dist: str = 'multinomial'):
       for q in p:
         t = tuple(q)
         if M[t] is None:
-          ch = Learn(utils.restrict(c, S, q), q, k)
+          ch = LearnMST(utils.restrict(c, S, q), q, k)
           pi.add(c)
           M[t] = ch
   return s

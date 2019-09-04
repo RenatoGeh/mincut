@@ -182,7 +182,10 @@ class PartitionGraph:
     I = np.nonzero(T.a)
     K = np.squeeze(np.dstack((I, np.array(W.a)[I])))
     # Sort by second column.
-    E = K[K[:,1].argsort()]
+    if len(K) == 2:
+      E = K
+    else:
+      E = K[K[:,1].argsort()]
     P = []
     for i, p in enumerate(E):
       e = graph_tool.util.find_edge(H, H.edge_index, int(i))[0]
