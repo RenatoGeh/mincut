@@ -37,7 +37,7 @@ def fetch_data(name: str):
   return R, V, T, S
 
 def learn_structure(D, Sc):
-  S = learn.Learn(D, Sc, 2)
+  S = learn.LearnMST(D, Sc, 2)
   spn.save(S, 'spn.net')
   return S
 

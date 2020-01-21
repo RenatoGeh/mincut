@@ -52,7 +52,7 @@ def _generate_sample_graph(D: spn.Dataset, S: spn.Scope, M: VertexMap, sample_fu
       t = M.g(u)
       if G.edge(s, t) is None:
         e = G.add_edge(s, t)
-        W[e] = __correlation(D, s, t)
+        W[e] = utils.correlation(D, s, t)
   return G
 
 def _generate_complete_graph(D: spn.Dataset, S: spn.Scope):
@@ -64,33 +64,11 @@ def _generate_complete_graph(D: spn.Dataset, S: spn.Scope):
     s = int(e.source())
     t = int(e.target())
     if e not in W:
-      W[e] = _correlation(D, s, t)
+      W[e] = utils.correlation(D, s, t)
   return G
 
 def _cut_mins(G: graph_tool.Graph) -> graph_tool.Graph:
   W = G.edge_properties['weights']
-
-# D: dataset
-# x: variable, st x <- x - min_x Index(Variables)
-# y: variable, st y <- y - min_y Index(Variables)
-# If scope is always in increasing order, then x and y are exactly the vertices from VertexMap
-def _correlation(D: spn.Dataset, x: int, y: int) -> float:
-  X = D[:,x]
-  Y = D[:,y]
-
-  x_mean = X.mean()
-  y_mean = Y.mean()
-  X_diff = X-x_mean
-  Y_diff = Y-y_mean
-  top = np.multiply(X_diff, Y_diff).sum()
-
-  x_sq = math.sqrt(np.multiply(X_diff, X_diff).sum())
-  y_sq = math.sqrt(np.multiply(Y_diff, Y_diff).sum())
-  bottom = x_sq*y_sq
-
-  if top == 0 and bottom == top:
-    return 0.0
-  return abs(top/bottom)
 
 def _to_directed(G: graph_tool.Graph) -> graph_tool.Graph:
   H = graph_tool.Graph(directed = True)
@@ -188,8 +166,8 @@ class PartitionGraph:
       E = K[K[:,1].argsort()]
     P = []
     for i, p in enumerate(E):
-      e = graph_tool.util.find_edge(H, H.edge_index, int(i))[0]
-      H.remove_edge(e)
+      e = graph_tool.util.find_edge(H, H.edge_index, int(i))
+      H.remove_edge(e[0])
       C, h = graph_tool.topology.label_components(H)
       P.append([self._S[p] for p in utils.group_by(np.array(C.a))])
     return P
@@ -198,7 +176,7 @@ def _generate_complete_network(D: spn.Dataset, S: spn.Scope):
   G = nx.complete_graph(S)
   for i, u in enumerate(S):
     for j, v in enumerate(S[i+1:]):
-      G.add_edge(u, v, weight=_correlation(D, i, j+i+1))
+      G.add_edge(u, v, weight=utils.correlation(D, i, j+i+1))
   return G
 
 class PartitionNetwork:
