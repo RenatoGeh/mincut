@@ -25,8 +25,11 @@ def test_partition_net():
   print('---')
   print('P2:', P2)
 
-def fetch_sklearn_data():
-  raw_data = datasets.load_breast_cancer()
+def fetch_sklearn_data(name='iris'):
+  if name == 'iris':
+    raw_data = datasets.load_iris()
+  else:
+    raw_data = datasets.load_breast_cancer()
   D = np.column_stack((raw_data.data, raw_data.target))
   S = [*range(D.shape[1])]
   return D, S
@@ -36,10 +39,13 @@ def fetch_data(name: str):
   S = [*range(R.shape[1])]
   return R, V, T, S
 
-def learn_structure(D, Sc):
-  S = learn.LearnMST(D, Sc, 2)
+def learn_structure(D, Sc, dist = 'multinomial'):
+  S = learn.Learn(D, Sc, 2, dist)
   spn.save(S, 'spn.net')
   return S
 
 _, _, D, Sc = fetch_data('accidents')
-S = learn_structure(D, Sc)
+#D, Sc = fetch_sklearn_data('iris')
+# S = learn_structure(D, Sc, dist = 'gaussian')
+S = learn_structure(D[:10], Sc)
+print(S.summary())

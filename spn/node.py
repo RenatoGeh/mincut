@@ -40,3 +40,18 @@ class Node:
           V[c] = True
           Q.append(c)
     return O
+
+  def summary(self) -> str:
+    kinds = {}
+    s, p, l = 0, 0, 0
+    Q = self.top_down_order()
+    for n in Q:
+      k = n.kind()
+      if k not in kinds:
+        kinds[k] = 1
+      else:
+        kinds[k] += 1
+    s = 'SPN node count:\n'
+    for k in kinds:
+      s += '  #{}: {}\n'.format(k, kinds[k])
+    return s

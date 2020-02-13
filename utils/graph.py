@@ -160,14 +160,15 @@ class PartitionGraph:
     I = np.nonzero(T.a)
     K = np.squeeze(np.dstack((I, np.array(W.a)[I])))
     # Sort by second column.
-    if len(K) == 2:
-      E = K
+    if K.size == 2:
+      E = [K]
     else:
       E = K[K[:,1].argsort()]
     P = []
-    for i, p in enumerate(E):
-      e = graph_tool.util.find_edge(H, H.edge_index, int(i))
-      H.remove_edge(e[0])
+    for q in E:
+      e = graph_tool.util.find_edge(self._G, self._G.edge_index, int(q[0]))[0]
+      e_h = H.edge(e.source(), e.target())
+      H.remove_edge(e_h)
       C, h = graph_tool.topology.label_components(H)
       P.append([self._S[p] for p in utils.group_by(np.array(C.a))])
     return P

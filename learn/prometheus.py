@@ -49,6 +49,7 @@ def LearnKL(D: spn.Dataset, S: spn.Scope, k: int, dist: str = 'multinomial'):
   return s
 
 def LearnMST(D: spn.Dataset, S: spn.Scope, k: int, dist: str = 'multinomial'):
+  print('|S| = {}, S = {}'.format(len(S), S))
   if len(S) == 1:
     print('Creating univariate distribution...')
     if dist == 'multinomial':
@@ -64,21 +65,20 @@ def LearnMST(D: spn.Dataset, S: spn.Scope, k: int, dist: str = 'multinomial'):
   s = spn.Sum()
   M = {}
   for c in C:
-    print('{}/{}={}'.format(c.size, D.size, c.size/D.size))
     m = c.size/D.size
     print('Partitioning...')
     N = utils.PartitionGraph(c, S)
     P = N.partition_mst()
     for p in P:
-      M.update({tuple(v): None for v in p})
-    for p in P:
       pi = spn.Product()
       s.add(pi, math.log(m))
       for q in p:
         t = tuple(q)
-        if M[t] is None:
+        if t not in M:
           ch = LearnMST(utils.restrict(c, S, q), q, k, dist)
           M[t] = ch
+        else:
+          print('Reuse: {}'.format(t))
         pi.add(M[t])
   return s
 
